@@ -34,7 +34,16 @@ public class ArticleServiceimpl implements ArticleService {
 
     @Override
     public List<ArticleSER> fetchAll2() {
-        return null;
+
+        String url = "http://localhost:8081/api/articleser";
+
+        ResponseEntity<List<ArticleSER>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<ArticleSER>>() {});
+
+        return response.getBody();
     }
 
     @Override
