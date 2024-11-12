@@ -23,7 +23,13 @@ public class ArticleServiceimpl implements ArticleService {
 
     @Override
     public List<ArticleSER> fetchAll() {
-        return null;
+
+        String url = "http://localhost:8081/api/articleser";
+
+        // Fetch response as List wrapped in ResponseEntity
+        ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
+        List<ArticleSER> articleSERS = response.getBody();
+        return articleSERS;
     }
 
     @Override
@@ -33,11 +39,21 @@ public class ArticleServiceimpl implements ArticleService {
 
     @Override
     public Optional<ArticleSER> fetchById(long id) {
-        return Optional.empty();
+
+        String url = "http://localhost:8081/api/articleser/" + id;
+
+        // Fetch JSON response as String wrapped in ResponseEntity
+        ResponseEntity<ArticleSER> response = restTemplate.getForEntity(url, ArticleSER.class);
+
+        ArticleSER articleSER = response.getBody();
+        return Optional.ofNullable(articleSER);
     }
 
     @Override
     public Optional<ArticleSER> fetchById2(long id) {
-        return Optional.empty();
+
+        String url = "http://localhost:8081/api/articleser/" + id;
+        ArticleSER articleSER = restTemplate.getForObject( url, ArticleSER.class);
+        return Optional.ofNullable(articleSER);
     }
 }
