@@ -13,10 +13,12 @@ import java.util.Optional;
 public class OrderServiceImpl implements OrderService {
 
     OrderDAO orderDAO;
+    ArticleService articleService;
 
     @Autowired
-    public OrderServiceImpl(OrderDAO orderDAO) {
+    public OrderServiceImpl(OrderDAO orderDAO, ArticleService articleService) {
         this.orderDAO = orderDAO;
+        this.articleService = articleService;
     }
     
     @Override
@@ -45,6 +47,7 @@ public class OrderServiceImpl implements OrderService {
             // id is in order
             order = create( order);
         }else{
+            articleService.updateStockById( order.getArticleId(), order.getQuantity());
             int updated = orderDAO.update( order);
             System.out.println( "Updated: " + updated + " rows");
         }
@@ -62,6 +65,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public int deleteById(long id) {
+        Optional<Order> order = orderDAO.findById( id);
+        articleService.updateStockById( order.get().getArticleId(), order.get().getQuantity());
         return orderDAO.deleteById( id);
     }
 

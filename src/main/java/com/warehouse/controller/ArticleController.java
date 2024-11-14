@@ -32,7 +32,7 @@ public class ArticleController {
         List<ArticleSER> articleSERS = articleService.fetchAll();
         List<ArticleSER> articleSERS2 = articleService.fetchAll2();
 
-        return ResponseEntity.ok( articleSERS);
+        return ResponseEntity.ok( articleSERS2);
     }
 
     // GET: http:/<port>/api/article/2/
@@ -47,7 +47,8 @@ public class ArticleController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }else{
             System.out.println(rep);
-            return ResponseEntity.ok(articleSER.get());
+            return ResponseEntity.ok(articleSER2.get());
         }
     }
+
 }

@@ -65,4 +65,12 @@ public class ArticleServiceimpl implements ArticleService {
         ArticleSER articleSER = restTemplate.getForObject( url, ArticleSER.class);
         return Optional.ofNullable(articleSER);
     }
+
+    @Override
+    public Optional<ArticleSER> updateStockById(long id, int quantity) {
+
+        String url = "http://localhost:8081/api/updatestockbyid?id=" + id +"&quantity=" + quantity;
+        ResponseEntity<ArticleSER> articleSER = restTemplate.postForEntity( url, null, ArticleSER.class);
+        return Optional.ofNullable(articleSER.getBody());
+    }
 }

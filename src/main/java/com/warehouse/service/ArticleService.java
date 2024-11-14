@@ -14,4 +14,6 @@ public interface ArticleService {
     Optional<ArticleSER> fetchById(long id);
 
     Optional<ArticleSER> fetchById2(long id);
+
+    Optional<ArticleSER> updateStockById(long id, int quantity);
 }
