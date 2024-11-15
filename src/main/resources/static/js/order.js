@@ -93,7 +93,6 @@ function initOrderTable() {
         "columns": columns
     });
 
-
     $("#orderTable tbody").on( 'click', 'tr', function () {
         console.log("Clicking on row");
         if ( $(this).hasClass('selected') ) {
@@ -132,7 +131,7 @@ function getOrderData(){
         },
 
         fail: function (error) {
-            console.log('Error: ' + error);
+            alert("Artikelen kunnen niet worden opgehaald");
         }
 
     });
@@ -198,7 +197,7 @@ function createOrder(){
                     console.log('Fail: ' + jqXHR.status);
         },
         error: function(error) {
-            alert(error);
+            alert("Bestelling kan niet worden verwerkt");
 
             console.log('Error: ' + error);
 
@@ -240,7 +239,7 @@ function deleteOrder(){
                             console.log('Fail: ' + jqXHR.status);
                 },
                 error: function(error) {
-                    alert(error);
+                    alert("Bestelling kan niet worden verwijderd");
 
                     console.log('Error: ' + error);
 
@@ -281,7 +280,7 @@ function getArticleData(){
                     console.log('Fail: ' + jqXHR.status);
         },
         error: function(error) {
-            alert(error);
+            alert("Artikelen niet gevonden");
 
             console.log('Error: ' + error);
 
@@ -333,7 +332,7 @@ function getArticleName( id){
         },
 
         fail: function (error) {
-            console.log('Error: ' + error);
+             alert("Artikelnaam niet gevonden");
         }
 
     });
