@@ -67,10 +67,10 @@ public class ArticleServiceimpl implements ArticleService {
     }
 
     @Override
-    public Optional<ArticleSER> updateStockById(long id, int quantity) {
+    public Optional<String> updateStockById(long id, int quantity) {
 
         String url = "http://localhost:8081/api/updatestockbyid?id=" + id +"&quantity=" + quantity;
-        ResponseEntity<ArticleSER> articleSER = restTemplate.postForEntity( url, null, ArticleSER.class);
-        return Optional.ofNullable(articleSER.getBody());
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity( url, null, String.class);
+        return Optional.ofNullable(responseEntity.getBody());
     }
 }

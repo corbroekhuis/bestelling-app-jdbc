@@ -17,7 +17,6 @@ import java.util.Optional;
 @RequestMapping("api")
 public class ArticleController {
 
-    int rep = 0;
     ArticleService articleService;
 
     @Autowired
@@ -39,14 +38,12 @@ public class ArticleController {
     @GetMapping( value = "/article/{id}", produces = "application/json")
     public ResponseEntity<ArticleSER> findById( @PathVariable("id") Long id){
 
-        rep++;
         Optional<ArticleSER> articleSER = articleService.fetchById( id);
         Optional<ArticleSER> articleSER2 = articleService.fetchById2( id);
 
         if(articleSER.isEmpty()){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }else{
-            System.out.println(rep);
             return ResponseEntity.ok(articleSER2.get());
         }
     }

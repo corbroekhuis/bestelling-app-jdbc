@@ -190,8 +190,18 @@ function createOrder(){
 
         },
 
-        fail: function (error) {
-          console.log('Error: ' + error);
+        fail: function (jqXHR, textStatus, errorThrown) {
+                    alert(jqXHR.status);
+                    alert(textStatus);
+                    alert(errorThrown);
+
+                    console.log('Fail: ' + jqXHR.status);
+        },
+        error: function(error) {
+            alert(error);
+
+            console.log('Error: ' + error);
+
         }
 
     });
@@ -222,8 +232,18 @@ function deleteOrder(){
 
                 },
 
-                fail: function (error) {
-                  console.log('Error: ' + error);
+                fail: function (jqXHR, textStatus, errorThrown) {
+                            alert(jqXHR.status);
+                            alert(textStatus);
+                            alert(errorThrown);
+
+                            console.log('Fail: ' + jqXHR.status);
+                },
+                error: function(error) {
+                    alert(error);
+
+                    console.log('Error: ' + error);
+
                 }
 
             });
@@ -253,8 +273,18 @@ function getArticleData(){
             );
         },
 
-        fail: function (error) {
+        fail: function (jqXHR, textStatus, errorThrown) {
+                    alert(jqXHR.status);
+                    alert(textStatus);
+                    alert(errorThrown);
+
+                    console.log('Fail: ' + jqXHR.status);
+        },
+        error: function(error) {
+            alert(error);
+
             console.log('Error: ' + error);
+
         }
 
     });

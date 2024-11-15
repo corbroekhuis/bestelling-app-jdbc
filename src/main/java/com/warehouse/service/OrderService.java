@@ -9,7 +9,7 @@ public interface OrderService {
 
     Iterable<Order> findAll();
     Optional<Order> findById(long id);
-    Order save(Order order);
-    int deleteById(long id);
+    Order save(Order order) throws Exception;
+    int deleteById(long id) throws Exception;
     List<Order> findByArticleId(long id);
 }

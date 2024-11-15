@@ -41,13 +41,22 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Order save(Order order) {
+    public Order save(Order order) throws Exception {
 
         if(order.getId() == null){
             // id is in order
+            Optional<String> result = articleService.updateStockById( order.getArticleId(), -order.getQuantity());
+            if(result.isEmpty()){
+                throw new Exception("Order niet opgeslagen: Artikel kon niet worden afgeboekt");
+            }
             order = create( order);
         }else{
-            articleService.updateStockById( order.getArticleId(), order.getQuantity());
+            Optional<Order> check = orderDAO.findById(order.getId());
+            int toAddOrSubtract = check.get().getQuantity() - order.getQuantity();
+            Optional<String> result = articleService.updateStockById( order.getArticleId(), toAddOrSubtract);
+            if(result.isEmpty()){
+                throw new Exception("Order niet opgeslagen: Artikel kon niet worden afgeboekt");
+            }
             int updated = orderDAO.update( order);
             System.out.println( "Updated: " + updated + " rows");
         }
@@ -64,9 +73,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public int deleteById(long id) {
+    public int deleteById(long id) throws Exception {
         Optional<Order> order = orderDAO.findById( id);
-        articleService.updateStockById( order.get().getArticleId(), order.get().getQuantity());
+        Optional<String> result = articleService.updateStockById( order.get().getArticleId(), order.get().getQuantity());
+        if(result.isEmpty()){
+            throw new Exception("Order niet verwijderd: Artikel kon niet worden afgeboekt");
+        }
         return orderDAO.deleteById( id);
     }
 

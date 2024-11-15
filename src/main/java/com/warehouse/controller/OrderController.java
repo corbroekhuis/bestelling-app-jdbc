@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -37,9 +38,15 @@ public class OrderController {
 
     // POST: http:/<port>/api/order
     @PostMapping( value = "/order", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Order> saveOrder(@RequestBody Order Order){
+    public ResponseEntity<Order> saveOrder(@RequestBody Order Order) {
 
-        Order saved = orderService.save( Order);
+        Order saved = null;
+        try {
+            saved = orderService.save( Order);
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getCause());
+        }
 
         return ResponseEntity.ok(saved);
     }
@@ -60,7 +67,12 @@ public class OrderController {
     @DeleteMapping( value="/order/{id}")
     public ResponseEntity<String> deleteById( @PathVariable long id){
 
-        orderService.deleteById( id);
+        try {
+            orderService.deleteById( id);
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getCause());
+        }
         return ResponseEntity.ok("deleted");
     }
 }
