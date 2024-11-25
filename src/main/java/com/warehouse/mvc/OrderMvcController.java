@@ -12,7 +12,16 @@ public class OrderMvcController {
 
         System.out.println("Inside orderPage");
 
-        return "order.html";
+        return "order";
+    }
+
+    // http://localhost:<port>/order
+    @GetMapping({"/","/home"})
+    public String homePage() {
+
+        System.out.println("Inside homePage");
+
+        return "order";
     }
 }
 

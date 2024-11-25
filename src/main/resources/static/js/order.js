@@ -1,6 +1,6 @@
 var api = "/api/order" ;
 var orderTable;
-
+var articleNames = [];
 function init(){
 
     console.log('inside init' );
@@ -50,10 +50,11 @@ function init(){
     });
 
     // Add submit event to form for new and edit
-    $("#order-form").on('submit', function() {
+    $("#order-form").on('submit', function( event) {
         console.log("Submitting");
         createOrder();
         $('#order-modal').modal('hide');
+        event.preventDefault();
     });
 
     initOrderTable();
@@ -78,7 +79,7 @@ function initOrderTable() {
             "visible": false },
         { "title":  "Artikel",
             "data": "articleId",
-            "render": function(articleId) {
+            "render": function(articleId, type, row) {
                return getArticleName( articleId);
             }},
         { "title":  "Aantal",
@@ -311,13 +312,19 @@ var helpers =
     }
 }
 
-function getArticleName( id){
+function getArticleName( articleId){
 
+console.log("Aantal artikelen: " + $(articleNames).length);
+    let article = articleNames.find(o => o.id === articleId);
+
+    if(article){
+        return article.name;
+    }
 //    return "Slim Bike ZW";
     var articleName = "Not found";
 
     $.ajax({
-        url: "api/article/"+ id,
+        url: "api/article/"+ articleId,
         type: "get",
         async: false,
         dataType: "json",
@@ -327,6 +334,7 @@ function getArticleName( id){
  //           console.log('Data: ' + orders );
 
             if (article) {
+                articleNames.push({id: articleId, name: article.name});
                 articleName =  article.name;
             }
         },

@@ -3,6 +3,7 @@ package com.warehouse.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,8 +15,10 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
-@EnableWebMvc
+@EnableWebSecurity
 public class FormAuthConfig {
+
+    private volatile boolean running;
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -47,19 +50,32 @@ public class FormAuthConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/"
                                 , "/h2-console/**"
-                                , "/v2/api-docs"
+                                , "/v3/api-docs"
                                 , "/configuration/ui"
                                 , "/swagger-resources/**"
                                 , "/configuration/security"
                                 , "/swagger-ui/**"
+                                , "/swagger-ui.html"
                                 , "/webjars/**"
                         ).permitAll()
                         .requestMatchers("/order").authenticated()
+//                        .requestMatchers("/order").hasAnyAuthority("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )
-                .formLogin(withDefaults());
+                .formLogin( withDefaults())
+                .logout( withDefaults());
 
         return http.build();
     }
 
+    public void handleNotification() {
+
+        if( running){
+            System.out.println("");
+            return;
+        }
+        running = true;
+        // Do stuff
+        running = false;
+    }
 }

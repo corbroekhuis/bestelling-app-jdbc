@@ -29,9 +29,9 @@ public class ArticleController {
     public ResponseEntity<List<ArticleSER>> findAll(){
 
         List<ArticleSER> articleSERS = articleService.fetchAll();
-        List<ArticleSER> articleSERS2 = articleService.fetchAll2();
+//        List<ArticleSER> articleSERS2 = articleService.fetchAll2();
 
-        return ResponseEntity.ok( articleSERS2);
+        return ResponseEntity.ok( articleSERS);
     }
 
     // GET: http:/<port>/api/article/2/
@@ -39,12 +39,12 @@ public class ArticleController {
     public ResponseEntity<ArticleSER> findById( @PathVariable("id") Long id){
 
         Optional<ArticleSER> articleSER = articleService.fetchById( id);
-        Optional<ArticleSER> articleSER2 = articleService.fetchById2( id);
+//        Optional<ArticleSER> articleSER2 = articleService.fetchById2( id);
 
         if(articleSER.isEmpty()){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }else{
-            return ResponseEntity.ok(articleSER2.get());
+            return ResponseEntity.ok(articleSER.get());
         }
     }
 
