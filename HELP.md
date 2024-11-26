@@ -21,7 +21,12 @@
 ### Index:
 * [Create tabel Bestellingen](#bestellingen)
 * [Properties](#properties)
+* [RestTemplate (Basic auth mTls)](#rest)
 * [Form Authentication](#form-authentication)
+* [Encode](#encode)
+* [Https](#https)
+* [Certificaten](#certificaten)
+* [Login form en request ](#login)
 
 <br/><br/>
 <br/><br/>
@@ -51,51 +56,51 @@ INSERT INTO bestellingen ( artikel_id, aantal, datum) VALUES
 * [Top](#top)
 ## <a id="properties"></a>Properties
 
-
 ```properties
-# Default: 8080
-server.port=8080
+server.port=8443
 
-ean.aansluitnummer=11999
-fixed-delay.in.milliseconds=40000
-spring.application.name=voorraad-app
+voorraad.api.url=https://localhost:8081/api/
+voorraad.api.server=localhost
+voorraad.api.port= 8081
+voorraad.api.user=admin
+voorraad.api.password=admin
+
+spring.application.name=bestelling-app
 
 spring.h2.console.enabled=true
 spring.datasource.driverClassName=org.h2.Driver
 spring.datasource.url=jdbc:h2:file:C:/Temp/bestelling
 spring.datasource.username=sa
 spring.datasource.password=sa
-# jpa, niet meer nodig
-# spring.jpa.hibernate.ddl-auto=create
+server.error.include-binding-errors=always
+
+# Voor Restemplate naar Voorraad (mTls)
+client.ssl.key-store=classpath:bestelling.p12
+client.ssl.key-store-password=bestelling
+client.ssl.trust-store=classpath:truststore.p12
+client.ssl.trust-store-password=cacerts
+
+# Voor https 
+server.ssl.key-store=classpath:bestelling.p12
+server.ssl.key-store-password=bestelling
+server.ssl.key-store-type=PKCS12
+server.ssl.trust-store=classpath:truststore.p12
+server.ssl.trust-store-password=cacerts
+server.ssl.trust-store-type=PKCS12
 
 ```
 
-<br/><br/>
-<br/><br/>
 * [Top](#top)
 
 ## <a id="form-authentication"></a>Form Authentication
 
 ```java
 
-package com.warehouse.config;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
-@EnableWebMvc
+@EnableWebSecurity
 public class FormAuthConfig {
+
+    private volatile boolean running;
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -114,44 +119,153 @@ public class FormAuthConfig {
         return new InMemoryUserDetailsManager(user1, user2);
     }
 
-@Bean
-BCryptPasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-}
+    @Bean
+    BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-    http.headers(header -> header.frameOptions(options -> options.sameOrigin()));
-    http.csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/"
-                            , "/h2-console/**"
-                            , "/v2/api-docs"
-                            , "/configuration/ui"
-                            , "/swagger-resources/**"
-                            , "/configuration/security"
-                            , "/swagger-ui/**"
-                            , "/webjars/**"
-                    ).permitAll()
-                    .requestMatchers("/api").authenticated()
-                    .anyRequest().authenticated()
-            )
-        .formLogin(withDefaults());
+        http.headers(header -> header.frameOptions(options -> options.sameOrigin()));
+        http.csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                                .requestMatchers("/"
+                                        , "/h2-console/**"
+                                        , "/v3/api-docs"
+                                        , "/configuration/ui"
+                                        , "/swagger-resources/**"
+                                        , "/configuration/security"
+                                        , "/swagger-ui/**"
+                                        , "/swagger-ui.html"
+                                        , "/webjars/**"
+                                ).permitAll()
+                                .requestMatchers("/order").authenticated()
+//                        .requestMatchers("/order").hasAnyAuthority("USER", "ADMIN")
+                                .anyRequest().authenticated()
+                )
+                .formLogin( withDefaults())
+                .logout( withDefaults());
 
         return http.build();
     }
+}
+```
 
+* [Top](#top)
+
+## <a id="rest"></a>Rest Template Basic Authentication mTls
+
+```java
+@Configuration
+public class RestConfig {
+
+    private String server;
+    private int port;
+    private String user;
+    private String password;
+
+    @Value("${client.ssl.trust-store}")
+    private Resource trustStore;
+    @Value("${client.ssl.key-store}")
+    private Resource keyStore;
+    @Value("${client.ssl.trust-store-password}")
+    private String trustStorePassword;
+    @Value("${client.ssl.key-store-password}")
+    private String keyStorePassword;
+
+    public RestConfig(
+            @Value("${voorraad.api.server}") String server,
+            @Value("${voorraad.api.port}") int port,
+            @Value("${voorraad.api.user}") String user,
+            @Value("${voorraad.api.password}") String password,
+            @Value("${client.ssl.trust-store}") Resource trustStore,
+            @Value("${client.ssl.key-store}") Resource keyStore,
+            @Value("${client.ssl.trust-store-password}") String trustStorePassword,
+            @Value("${client.ssl.key-store-password}")String keyStorePassword
+            ){
+
+        this.server = server;
+        this.port = port;
+        this.user = user;
+        this.password = password;
+        this.trustStore = trustStore;
+        this.keyStore = keyStore;
+        this.trustStorePassword = trustStorePassword;
+        this.keyStorePassword = keyStorePassword;
+    }
+
+    @Bean
+    public RestTemplate restTemplate(){
+
+        RestTemplate restTemplate = new RestTemplate(getClientHttpRequestFactory());
+
+        return restTemplate;
+    }
+
+    @Bean
+    public HttpComponentsClientHttpRequestFactory getClientHttpRequestFactory()
+    {
+        HttpComponentsClientHttpRequestFactory clientHttpRequestFactory
+                = new HttpComponentsClientHttpRequestFactory();
+
+        clientHttpRequestFactory.setHttpClient(httpClient());
+
+        return clientHttpRequestFactory;
+    }
+
+    @Bean
+    public CloseableHttpClient httpClient()
+    {
+        // mTls
+        SSLConnectionSocketFactory sslConFactory = new SSLConnectionSocketFactory(sslContext(), new NoopHostnameVerifier());
+
+        HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()
+                .setSSLSocketFactory(sslConFactory)
+                .build();
+
+        // Basic authentication
+        BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+        credentialsProvider.setCredentials(new AuthScope(server, port),
+                new UsernamePasswordCredentials(user, password.toCharArray()));
+
+        CloseableHttpClient client = HttpClientBuilder
+                .create()
+                .setConnectionManager(cm)
+                .setDefaultCredentialsProvider(credentialsProvider)
+                .build();
+        return client;
+    }
+
+    @Bean
+    public SSLContext sslContext() {
+
+        try {
+            SSLContext sslContext = new SSLContextBuilder()
+                    .loadKeyMaterial(
+                            keyStore.getURL(),
+                            keyStorePassword.toCharArray(),
+                            keyStorePassword.toCharArray()
+                    )
+                    .loadTrustMaterial(
+                            trustStore.getURL(),
+                            trustStorePassword.toCharArray()
+                    ).build();
+
+            return  sslContext;
+
+        }catch ( Exception e){
+            throw new RuntimeException("Unable to create SSLContext");
+        }
+    }
 }
 
 ```
 
-
-<br/><br/>
-<br/><br/>
 * [Top](#top)
 
-## <a id="encode"></a>Create token from user and password 
+## <a id="encode"></a>Create Basic Authentication token from user and password 
 
 ```java
     public static String getBasicAuth( String user, String password){
@@ -166,6 +280,166 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     }
 ```
 
-<br><br>
-<br><br>
+* [Top](#top)
+
+
+## <a id="https"></a>Https ssl
+
+```java
+
+@Configuration
+public class HttpsConfig {
+
+    @Bean
+    public ServletWebServerFactory servletContainer() {
+        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory() {
+            @Override
+            protected void postProcessContext(Context context) {
+                var securityConstraint = new SecurityConstraint();
+                securityConstraint.setUserConstraint("CONFIDENTIAL");
+                var collection = new SecurityCollection();
+                collection.addPattern("/*");
+                securityConstraint.addCollection(collection);
+                context.addConstraint(securityConstraint);
+            }
+        };
+        tomcat.addAdditionalTomcatConnectors(getHttpConnector());
+        return tomcat;
+    }
+
+    private Connector getHttpConnector() {
+        var connector = new Connector(TomcatServletWebServerFactory.DEFAULT_PROTOCOL);
+        connector.setScheme("http");
+        connector.setPort(8080);
+        connector.setSecure(false);
+        connector.setRedirectPort(8443);
+        return connector;
+    }
+}
+
+```
+
+* [Top](#top)
+
+## <a id="certificaten"></a>Certificaten  
+[https://bohutskyi.com/security-mtls-in-spring-boot-aef44316dd4b](https://bohutskyi.com/security-mtls-in-spring-boot-aef44316dd4b)
+
+### CA genereer private key
+```shell
+<openssl>\openssl genrsa -out ca.key 2048
+```
+
+### CA self-sign and genereer certificate
+```shell
+<openssl>\openssl req -x509 -new ^
+-subj "/C=NL/ST=UT/O=Hardcor Trust/CN=Hardcor CA" ^
+-nodes -key ca.key -sha256 -days 365 -out ca.pem
+```
+
+### Genereer private keys mTls
+```shell
+<openssl>\openssl genrsa -out voorraad.key 2048
+<openssl>\openssl genrsa -out bestelling.key 2048
+```
+
+### Genereer csr's mTls (SAN extensions zijn tegenwoordig min of meer verplicht)
+```shell
+<openssl>\openssl req -new ^
+-subj "/C=NL/ST=UT/O=Organisatie N.V./CN=localhost" ^
+-addext "subjectAltName = DNS:localhost,DNS:securewebsite.nl,DNS:secureendpoint.org" ^
+-key voorraad.key -out voorraad.csr
+
+<openssl>\openssl req -new ^
+-subj "/C=NL/ST=UT/O=Organisatie N.V./CN=localhost" ^
+-addext "subjectAltName = DNS:localhost,DNS:securewebsite.nl,DNS:secureendpoint.org" ^
+-key bestelling.key -out bestelling.csr
+```
+
+### sign csr's met CA private key (inclusief extensions)
+
+```shell
+<openssl>\openssl x509 -req -in voorraad.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out voorraad.crt -days 365 -copy_extensions copyall
+<openssl>\openssl x509 -req -in bestelling.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out bestelling.crt -days 365 -copy_extensions copyall
+```
+
+### Genereer pkcs#12 keystores (pw: voorraad en bestelling)
+```shell
+<openssl>\openssl pkcs12 -export -out voorraad.p12 -name "voorraad" -inkey voorraad.key -in voorraad.crt -certfile ca.pem
+<openssl>\openssl pkcs12 -export -out bestelling.p12 -name "bestelling" -inkey bestelling.key -in bestelling.crt -certfile ca.pem
+```
+
+### Genereer trustore (pw: cacerts)
+```shell
+<JDK>\bin\keytool -import -file ca.pem -alias "ca" -keystore truststore.p12 -storetype PKCS12
+```
+
+* [Top](#top)
+
+## <a id="login"></a>Login form en request 
+* \<form\> method="post"
+* action="http://localhost:8082/login"
+* name="username"
+* name="password"
+* submit button
+
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Please sign in</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+    <link href="https://getbootstrap.com/docs/4.0/examples/signin/signin.css" rel="stylesheet" integrity="sha384-oOE/3m0LUMPub4kaC09mrdEhIc+e3exm4xOGxAmuFXhBNF4hcg/6MiAXAf5p0P56" crossorigin="anonymous"/>
+  </head>
+  <body>
+     <div class="container">
+      <form class="form-signin" method="post" action="http://localhost:8082/login">
+        <h2 class="form-signin-heading">Please sign in</h2>
+          <label for="username" class="sr-only">Username</label>
+          <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
+        </p>
+        <p>
+          <label for="password" class="sr-only">Password</label>
+          <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+        </p>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+      </form>
+</div>
+</body></html>
+
+```
+
+### Request
+* Content-Type: application/x-www-form-urlencoded
+* Body: username=admin&password=admin
+
+```text
+POST /login HTTP/1.1
+Host: localhost:9999
+Connection: keep-alive
+Content-Length: 29
+Cache-Control: max-age=0
+sec-ch-ua: "Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
+Origin: null
+Content-Type: application/x-www-form-urlencoded
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Sec-Fetch-Site: cross-site
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Sec-Fetch-Dest: document
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: en-US,en;q=0.9
+
+username=admin&password=admin
+```
+
+
 * [Top](#top)
