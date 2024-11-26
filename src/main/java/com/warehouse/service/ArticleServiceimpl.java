@@ -16,26 +16,21 @@ import java.util.Optional;
 public class ArticleServiceimpl implements ArticleService {
 
     RestTemplate restTemplate;
-    String server;
-    int port;
-    String baseUrl;
+    String apiUrl;
 
     @Autowired
     public ArticleServiceimpl(RestTemplate restTemplate,
-                              @Value("${voorraad.api.server}") String server,
-                              @Value("${voorraad.api.port}") int port
-                              ) {
+                              @Value("${voorraad.api.url}") String apiUrl) {
+
         this.restTemplate = restTemplate;
-        this.server = server;
-        this.port = port;
-        this.baseUrl = String.format("http://%s:%d/api/", server, port);
-        System.out.println( baseUrl);
+        this.apiUrl = apiUrl;
+        System.out.println( apiUrl);
     }
 
     @Override
     public List<ArticleSER> fetchAll() {
 
-        String url = baseUrl + "articleser";
+        String url = apiUrl + "articleser";
 
         // Fetch response as List wrapped in ResponseEntity
         ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
@@ -46,7 +41,7 @@ public class ArticleServiceimpl implements ArticleService {
     @Override
     public List<ArticleSER> fetchAll2() {
 
-        String url = baseUrl + "articleser";
+        String url = apiUrl + "articleser";
 
         ResponseEntity<List<ArticleSER>> response = restTemplate.exchange(
                 url,
@@ -60,7 +55,7 @@ public class ArticleServiceimpl implements ArticleService {
     @Override
     public Optional<ArticleSER> fetchById(long id) {
 
-        String url = baseUrl + "articleser/{id}";
+        String url = apiUrl + "articleser/{id}";
 
         // Fetch JSON response as String wrapped in ResponseEntity
         ResponseEntity<ArticleSER> response = restTemplate.getForEntity(url, ArticleSER.class, id);
@@ -72,7 +67,7 @@ public class ArticleServiceimpl implements ArticleService {
     @Override
     public Optional<ArticleSER> fetchById2(long id) {
 
-        String url = baseUrl + "articleser/{id}";
+        String url = apiUrl + "articleser/{id}";
 
         ArticleSER articleSER = restTemplate.getForObject( url, ArticleSER.class, id);
         return Optional.ofNullable(articleSER);
@@ -81,7 +76,7 @@ public class ArticleServiceimpl implements ArticleService {
     @Override
     public Optional<String> updateStockById(long id, int quantity) {
 
-        String url = baseUrl + "updatestockbyid?id={id}&quantity={quantity}";
+        String url = apiUrl + "updatestockbyid?id={id}&quantity={quantity}";
         ResponseEntity<String> responseEntity = restTemplate.postForEntity( url, null, String.class, id, quantity);
         return Optional.ofNullable(responseEntity.getBody());
     }

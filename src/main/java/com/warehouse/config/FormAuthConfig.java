@@ -67,15 +67,4 @@ public class FormAuthConfig {
 
         return http.build();
     }
-
-    public void handleNotification() {
-
-        if( running){
-            System.out.println("");
-            return;
-        }
-        running = true;
-        // Do stuff
-        running = false;
-    }
 }
